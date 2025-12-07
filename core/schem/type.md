@@ -25,7 +25,7 @@ A **Type** is any struct that implements the following functions.
 > The Rust compiler may use a different byte layout depending on factors such as the operating system.
 > You MUST tell the compiler to use the same byte layout everywhere by adding the tag **#[repr(C)]** before the Type struct.
 >
-> All other structs your struct contains must also have the **#[repr(C)]** tag.
+> All structs your struct contains must also have the **#[repr(C)]** tag. Data types such as Vec and String don't have a stable byte layout.
 
 ```rs
 /// (package name, lowercase struct name, semver major, minor)
@@ -33,29 +33,16 @@ pub const fn ident() -> (&'static str, &'static str, u16, u16);
 
 /// serialize self into byte vector for saving
 /// requires being able to reconstruct self from the byte vector
-pub fn serialize(&self) -> Vec<u8>;
+pub fn serialize(&self) -> Box<[u8]>;
 
 /// reconstructs self from byte vector
-pub fn deserialize(bytes: Vec<u8>) -> Result<Self, String>;
+pub fn deserialize(bytes: Box<[u8]>) -> Result<Self, Box<str>>;
 
 /// reconstructs self from a byte vector,
 /// but the byte vector represents an older version of self
 /// return none if conversion from version is not supported
-pub fn deserialize_upgrade(bytes: Vec<u8>, from_version: (u16, u16)) -> Option<Result<Self, String>>;
+pub fn deserialize_upgrade(bytes: Box<[u8]>, from_version: (u16, u16)) -> Option<Result<Self, Box<str>>>;
 ```
-
-> [!NOTE]
-> Data types such as Vec and String don't have a stable byte structure, the function signatures need to be changed. This is a WIP.
-> <details>
-> <summary>Proposed C-safe function signature</summary>
-> 
-> ```rs
-> pub const fn ident() -> (&'static str, &'static str, u16, u16);
-> pub fn serialize(&self) -> Box<[u8]>;
-> pub fn deserialize(bytes: Box<[u8]>) -> Result<Self, Box<str>>;
-> pub fn deserialize_upgrade(bytes: Box<[u8]>, from_version: (u16, u16)) -> Option<Result<Self, Box<str>>>;
-> ```
-> </details>
 
 ### Naming and Distribution
 
