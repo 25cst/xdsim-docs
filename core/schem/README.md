@@ -6,11 +6,20 @@ Each page contain the schema for the struct/trait, how it is implemented, and th
 
 ## Pages
 
+### Components
+
 |Page|Description|
 |---|---|
 |[Gate](./gate.md)|A **Gate** is a component that has state and functionality (computing output based on current input and current state).|
 |[Connection](./conn.md)|A **Connection** is a component used to connect the output of one Gate to the input of another Gate. It has no state and no functionality.|
 |[Type](./type.md)|Each input and output of a Gate has a predetermined **Type**, each Connection can only connect to input and output of a type that it supports.|
+
+### Misc (what is this?)
+
+|Page|Description|
+|---|---|
+|[Menu](./menu.md)|A **Menu** is a UI element that can contain text, foldable sections, and input boxes. It is used to take user inputs and display values.|
+|[PropertiesContainer](./props.md)|A **PropertiesContainer** contains properties that can be viewed and changed. It is used with a **Menu** to provide a UI for user input.|
 
 ## Commonalities
 

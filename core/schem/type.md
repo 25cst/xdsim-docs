@@ -40,6 +40,7 @@ pub fn deserialize(bytes: Vec<u8>) -> Result<Self, String>;
 
 /// reconstructs self from a byte vector,
 /// but the byte vector represents an older version of self
+/// return none if conversion from version is not supported
 pub fn deserialize_upgrade(bytes: Vec<u8>, from_version: (u16, u16)) -> Option<Result<Self, String>>;
 ```
 
