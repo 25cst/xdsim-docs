@@ -1,6 +1,6 @@
 # Schema
 
-All schema are defined in [libxdsim](https://github.com/25cst/libxdsim), they contain only structs and traits to help external libraries created by the user to communicate with the  core GUI program.
+All schema are defined in [libxdsim](https://github.com/25cst/libxdsim), the library contain only structs and traits to help external libraries created by the user to communicate with the  core GUI program.
 
 Each page contain the schema for the struct/trait, how it is implemented, and the macros to make implementation easier.
 
