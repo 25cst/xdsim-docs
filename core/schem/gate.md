@@ -14,6 +14,9 @@ A **Gate** is a crate with the following public structs and functions.
 
 - A struct that implements the **Gate** trait.
     ```rs
+    /// returns the gate definition (details below)
+    fn definition(&self) -> GateDefinition;
+
     /// the request contains the values of the current inputs
     /// the gate should return the list of outputs in order in definition
     /// the gate may modify its state
@@ -21,9 +24,6 @@ A **Gate** is a crate with the following public structs and functions.
 
     /// draws the (vector) graphics of its current state
     fn draw(&self, request: &GateDrawRequest) -> Graphic;
-
-    /// returns the gate definition (details below)
-    fn definition(&self) -> GateDefinition;
 
     /// returns the properties container (detail below)
     fn properties_container(&self) -> &dyn PropertiesContainer;
@@ -49,18 +49,18 @@ A **Gate** is a crate with the following public structs and functions.
     pub fn create_gate() -> Box<dyn Gate>;
     
     /// reconstructs gate from byte vector
-    pub fn deserialize_gate(gate: Box<[u8]>, properties: Box<[u8]>) -> Result<Box<dyn Gate>, Box<str>>;
+    pub fn deserialize_gate(gate: Box<[u8]>, props: Box<[u8]>) -> Result<Box<dyn Gate>, Box<str>>;
 
     /// reconstructs gate from and older version of byte vector
-    pub fn deserialize_gate_upgrade(gate: Box<[u8]>, properties: Box<[u8]>, from_version: (u16, u16)) -> Option<Result<Box<dyn Gate>, Box<str>>>;
+    pub fn deserialize_gate_upgrade(gate: Box<[u8]>, props: Box<[u8]>, from_version: (u16, u16)) -> Option<Result<Box<dyn Gate>, Box<str>>>;
     
     /// reconstructs properties container from byte vector
     /// returning the actual type (not boxed or anything)
-    pub fn deserialize_gate_property(properties: Box<[u8]>) -> Result<(concrete_type), Box<str>>;
+    pub fn deserialize_gate_property(props: Box<[u8]>) -> Result<(concrete_type), Box<str>>;
 
     /// reconstructs properties container of an older version from byte vector
     /// returning the actual type (not boxed or anything)
-    pub fn deserialize_gate_property_upgrade(properties: Box<[u8]>) -> Option<Result<(concrete_type), Box<str>>>;
+    pub fn deserialize_gate_property_upgrade(props: Box<[u8]>) -> Option<Result<(concrete_type), Box<str>>>;
     ```
 
 ### Naming and Distribution
@@ -84,7 +84,137 @@ edition = "2024"
 #### lib.rs
 
 ```rs
-// TODO
+#[derive(Default)]
+pub struct NoProperties;
+
+impl PropertiesContainer for NoProperties {
+    fn get_menu(&self) -> Menu {
+        Menu { items: Box::new([]) }
+    }
+
+    fn get_option(&self) -> Option<MenuInputValue> {
+        None
+    }
+
+    fn set_option(
+        &mut self,
+        _id: &str,
+        _value: MenuInputValue,
+    ) -> Result<(), PropertiesContainerSetError> {
+        Err(PropertiesContainerSetError::PropertyDoesNotExist)
+    }
+
+    fn serialize(&self) -> Box<[u8]> {
+        Box::new([])
+    }
+}
+
+#[derive(Default)]
+pub struct TFlipFlop {
+    value: bool,
+    props: NoProperties
+}
+
+impl Gate for TFlipFlop {
+    fn definition(&self) -> GateDefinition {
+        GateDefinition {
+            version: 0,
+
+            bounding_box: Vec2 { x: 1.0, y: 1.0 },
+            identifier: ("t-flip-flop", "tflipflop", 0, 1), // package=t-flip-flop, struct=TFlipFlop, version=0.1
+
+            inputs: Box::new([
+                GateIOEntry {
+                    name: "T".into(),
+                    data_type: ("common", "bit", 0, 1),
+                    position: Vec2 { x: 0.0, y: 0.5 }
+                }
+            ]),
+
+            outputs: Box::new([
+                GateIOEntry {
+                    name: "Q".into(),
+                    data_type: ("common", "bit", 0, 1),
+                    position: Vec2 { x: 1.0, y: 0.7 },
+                },
+                GateIOEntry {
+                    name: "QBar".into(),
+                    data_type: ("common", "bit", 0, 1),
+                    position: Vec2 { x: 1.0, y: 0.3 },
+                }
+            ])
+        }
+    }
+
+    fn tick(&mut self, request: GateTickRequest) -> Box<[*const ()]> {
+        let input_t: &Bool = request.get_input<Bool>(0);
+
+        if input_t.0 {
+            self.value = !self.value;
+        }
+
+        Box::new([
+            mem::transmute(Box::new(self.value.clone()).into_raw())
+        ])
+    }
+
+    fn draw(&self, _request: &GateDrawRequest) -> Graphic {
+        Graphic::from_vec(vec![
+            Element::Rect {
+                pos: Vec2 { x: 0.0, y: 0.0 },
+                size: Vec2 { x: 0.0, y: 0.0 },
+                stroke: StrokeStyle { colour: Colour::Fg },
+                fill: FillStyle {
+                    colour: Colour::Transparent,
+                },
+            },
+            Element::Rect {
+                pos: Vec2 { x: 0.4, y: 0.4 },
+                size: Vec2 { x: 0.2, y: 0.2 },
+                stroke: StrokeStyle {
+                    colour: Colour::Black,
+                },
+                fill: FillStyle {
+                    colour: if self.value.0 {
+                        Colour::Black
+                    } else {
+                        Colour::Yellow
+                    },
+                },
+            },
+        ])
+    }
+
+    fn properties_container(&self) -> &dyn PropertiesContainer {
+        &self.props
+    }
+
+    fn properties_container_mut(&mut self) -> &mut dyn PropertiesContainer {
+        &mut self.props
+    }
+
+    fn serialize(&self) -> Box<[u8]> {
+        self.value.serialize()
+    }
+}
+
+pub fn create_gate() -> Box<dyn Gate> {
+    Box::new(TFlipFlop {
+        value: Bit(false),
+        props: NoProperties,
+    })
+}
+
+pub fn deserialize_gate(gate: Box<[u8]>, props: Box<[u8]>) -> Box<dyn Gate> {
+    Box::new(TFlipFlop {
+        value: Bit::deserialize(gate),
+        props: deserialize_gate_property(props),
+    })
+}
+
+pub fn deserialize_gate_property(_props: Box<[u8]>) -> NoProperties {
+    NoProperties
+}
 ```
 
 </details>
