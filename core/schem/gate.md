@@ -65,8 +65,9 @@ A **Gate** is a crate with the following public structs and functions.
 
 ### Naming and Distribution
 
-- Crate must have name **xdsim-[package name]-gate**, for example **xdsim-and-gate**.
+- Crate must have name **xdsim-[package-name]-gate**, for example **xdsim-and-gate**.
 - Each crate can only contain one gate.
+- The Gate is compiled to a dynamic library and placed in the folder so it is loaded by the core program.
 
 <details>
 <summary>Example implementation</summary>
@@ -79,6 +80,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# libxdsim and libxdsim-common-type
+
+[lib]
+crate-type = ["dylib"]
 ```
 
 #### lib.rs
