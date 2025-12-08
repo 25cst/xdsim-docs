@@ -20,7 +20,7 @@ A **Gate** is a crate with the following public structs and functions.
     /// the request contains the values of the current inputs
     /// the gate should return the list of outputs in order in definition
     /// the gate may modify its state
-    fn tick(&mut self, request: GateTickRequest) -> Box<[*const ()]>;
+    fn tick(&mut self, request: GateTickRequest) -> Box<[Box<dyn Type>]>;
 
     /// draws the (vector) graphics of its current state
     fn draw(&self, request: &GateDrawRequest) -> Graphic;
@@ -49,18 +49,10 @@ A **Gate** is a crate with the following public structs and functions.
     pub fn create_gate() -> Box<dyn Gate>;
     
     /// reconstructs gate from byte vector
-    pub fn deserialize_gate(gate: Box<[u8]>, props: Box<[u8]>) -> Result<Box<dyn Gate>, Box<str>>;
+    pub fn deserialize_gate(gate: Box<[u8]>) -> Result<Box<dyn Gate>, Box<str>>;
 
     /// reconstructs gate from and older version of byte vector
-    pub fn deserialize_gate_upgrade(gate: Box<[u8]>, props: Box<[u8]>, from_version: (u16, u16)) -> Option<Result<Box<dyn Gate>, Box<str>>>;
-    
-    /// reconstructs properties container from byte vector
-    /// returning the actual type (not boxed or anything)
-    pub fn deserialize_gate_property(props: Box<[u8]>) -> Result<(concrete_type), Box<str>>;
-
-    /// reconstructs properties container of an older version from byte vector
-    /// returning the actual type (not boxed or anything)
-    pub fn deserialize_gate_property_upgrade(props: Box<[u8]>) -> Option<Result<(concrete_type), Box<str>>>;
+    pub fn deserialize_gate_upgrade(gate: Box<[u8]>, from_version: (u16, u16)) -> Option<Result<Box<dyn Gate>, Box<str>>>;
     ```
 
 ### Naming and Distribution
@@ -151,16 +143,14 @@ impl Gate for TFlipFlop {
         }
     }
 
-    fn tick(&mut self, request: GateTickRequest) -> Box<[*const ()]> {
+    fn tick(&mut self, request: GateTickRequest) -> Box<[Box<dyn Type>]> {
         let input_t: &Bool = request.get_input<Bool>(0);
 
         if input_t.0 {
             self.value = !self.value;
         }
 
-        Box::new([
-            mem::transmute(Box::new(self.value.clone()).into_raw())
-        ])
+        Box::new([Box::new(self.value.clone())])
     }
 
     fn draw(&self, _request: &GateDrawRequest) -> Graphic {
@@ -210,15 +200,11 @@ pub fn create_gate() -> Box<dyn Gate> {
     })
 }
 
-pub fn deserialize_gate(gate: Box<[u8]>, props: Box<[u8]>) -> Box<dyn Gate> {
+pub fn deserialize_gate(gate: Box<[u8]>, props: Box<[u8]>) -> Result<Box<dyn Gate>, Box<str>> {
     Box::new(TFlipFlop {
         value: Bit::deserialize(gate),
-        props: deserialize_gate_property(props),
+        props: NoProperties,
     })
-}
-
-pub fn deserialize_gate_property(_props: Box<[u8]>) -> NoProperties {
-    NoProperties
 }
 ```
 

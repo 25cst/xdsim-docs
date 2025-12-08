@@ -50,11 +50,11 @@ A **Connection** is a crate with the following public structs and functions.
   pub fn create_conn() -> Box<dyn Connection>;
 
   /// reconstructs properties container from byte vector
-  pub fn deserialize_conn_property(props: Box<[u8]>) -> Result<(concrete_type), Box<str>>;
+  pub fn deserialize_conn(conn: Box<[u8]>) -> Result<(concrete_type), Box<str>>;
 
   /// reconstructs properties container of an older version from byte array
   /// returning the actual type (not boxed or anything)
-  pub fn deserialize_conn_property_upgrade(props: Box<[u8]>, from_version: (u16, u16)) -> Option<Result<(concrete_type), Box<str>>>;
+  pub fn deserialize_conn_upgrade(conn: Box<[u8]>, from_version: (u16, u16)) -> Option<Result<(concrete_type), Box<str>>>;
   ```
 
 ### Naming and Distribution
@@ -118,8 +118,8 @@ impl Connection for BitConn {
         GateDefinition {
             version: 0,
 
-            identifier: ("bit", "bitconn", 0, 1), // package=t-flip-flop, struct=TFlipFlop, version=0.1
-            data_type: ("common", "bit", 0, 1),
+            identifier: ("bit-conn", 0, 1), // package=xdsim-bit-conn, version=0.1
+            data_type: ("bit-type", 0, 1),
         }
     }
 
@@ -146,8 +146,10 @@ pub fn create_conn() -> Box<dyn Connection> {
     })
 }
 
-pub fn deserialize_conn(_props: Box<[u8]>) -> NoProperties {
-    NoProperties
+pub fn deserialize_conn() -> Result<Box<dyn Conn>, Box<str>> {
+    Ok(Box::new(BitConn {
+        props: NoProperties,
+    }))
 }
 ```
 
